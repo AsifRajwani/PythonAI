@@ -1,0 +1,69 @@
+# ----------------------------------------------------------------------
+
+# Common Folders to Exclude (Performance Boost)
+
+# These directories contain dependencies, build outputs, or environments
+
+# that the AI does not need to analyze.
+
+# ----------------------------------------------------------------------
+
+# Python virtual environment directories
+
+.venv/
+venv/
+env/
+
+# Dependencies installed by package managers
+
+node_modules/ # Common in front-end/Node.js projects
+lib/
+
+# Build and distribution artifacts
+
+dist/
+build/
+out/
+
+# Caches and temporary files
+
+**pycache**/
+.cache/
+.pytest_cache/
+\*.egg-info/
+
+# Logs and large generated files
+
+\*.log
+logs/
+
+# ----------------------------------------------------------------------
+
+# Sensitive and Configuration Files (Security/Privacy)
+
+# These files should generally never be indexed or sent to the LLM.
+
+# ----------------------------------------------------------------------
+
+# Environment and secrets files
+
+.env
+.env.\*
+_.key
+_.pem
+credentials/
+apikeys.txt
+
+# IDE-specific settings (VS Code related)
+
+.vscode/
+
+# ----------------------------------------------------------------------
+
+# Other ignored files
+
+# ----------------------------------------------------------------------
+
+# Ignore the git history and its related files
+
+.git/
