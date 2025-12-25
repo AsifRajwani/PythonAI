@@ -531,6 +531,9 @@ conversation_text = """
 
 def conversation(openai_personality, gemini_personality, anthropic_personality,conversation_starter, conversation_length):
 
+    if not conversation_starter:
+        raise gr.Error("Conversation Starter is required.")
+
     import time
 
     openai_system_prompt = generate_system_prompt(openai_llm, openai_personality)
@@ -759,8 +762,7 @@ with gr.Blocks() as demo:
     openai_personality = gr.Dropdown(personality_choices, label="OpenAI Personality", value="Stoic")
     gemini_personality = gr.Dropdown(personality_choices, label="Gemini Personality", value="Narcissist")
     anthropic_personality = gr.Dropdown(personality_choices, label="Anthropic Personality", value="Joker")
-    #conversation_starter = gr.Textbox(label="Conversation Starter", lines=2, placeholder="e.g., What is the purpose of life?")
-    conversation_starter = gr.Textbox(label="Conversation Starter", lines=2, placeholder="e.g., What is the purpose of life?")
+    conversation_starter = gr.Textbox(label="Conversation Starter*", lines=2, placeholder="e.g., What is the purpose of life?")
     gr.Examples(
         [
             "What is the biggest threat to humanity?",
