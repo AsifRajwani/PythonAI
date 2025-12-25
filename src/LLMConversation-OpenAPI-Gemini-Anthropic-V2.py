@@ -344,90 +344,87 @@ def _generate_single_segment(text: str, voice_name: str, api_key: str, timeout_s
 
 # --- MAIN MULTI-VOICE FUNCTION ---
 
+from google.cloud import texttospeech # Add this to your imports  # noqa: E402
+
+# Update your voice map to use standard Neural2 voices
+NEURAL_VOICE_MAP = {
+    "Stoic": "en-US-Neural2-J",
+    "Skeptic": "en-US-Neural2-C",
+    "Joker": "en-US-Neural2-F",
+    "Optimist": "en-US-Neural2-E",
+    "Pessimist": "en-US-Neural2-A",
+    "Narcissist": "en-US-Neural2-I",
+    "Philosopher": "en-GB-Neural2-D",
+    "Bureaucrat": "en-US-Neural2-A",
+    "Gossip": "en-US-Neural2-H",
+    "Mentor": "en-GB-Neural2-B"
+}
+
 def generate_multi_voice_conversation_audio_gemini(raw_conversation_text: str, api_key: str = "") -> Union[str, str]:
     """
-    Generates a single, combined audio file (WAV) with distinct voices for each speaker 
-    in the conversation, using the Gemini TTS API.
-    
-    This function replaces the simple single-voice generator.
-    
-    Args:
-        raw_conversation_text: The conversation in Markdown format with speaker/personality labels.
-        api_key: The valid Gemini API key. Defaults to checking environment variables.
-
-    Returns:
-        The file path (str) of the final WAV audio file on success, or a string error message.
+    Switched to standard Google Cloud TTS (Neural2) for higher quotas and stability.
     """
-    
     # 1. Key Check
     if not api_key:
-        api_key = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
+        api_key = os.environ.get("GOOGLE_API_KEY", "")
         if not api_key:
-            return "ERROR: API Key is required. Please pass it as a parameter or set GEMINI_API_KEY/GOOGLE_API_KEY."
+            return "ERROR: GOOGLE_API_KEY is required."
 
-    # 2. Parse Turns and Assign Voices Dynamically
+    # 2. Initialize the standard Cloud TTS client with your API key
+    try:
+        # Client handles the API key via client_options
+        client = texttospeech.TextToSpeechClient(client_options={"api_key": api_key})
+    except Exception as e:
+        return f"ERROR: Failed to initialize TTS client: {e}"
+
+    # 3. Parse Turns
     turns = _extract_turns(raw_conversation_text)
     if not turns:
-        return "ERROR: Could not parse conversation text into individual turns."
-
-    # Map the unique personalities present in the text to a unique voice name
-    personalities_present = [t['personality'] for t in turns]
-    
-    # The dynamically assigned voices will override the fixed UNIQUE_VOICE_MAP
-    voice_assignment_map = _get_unique_voice_assignment(personalities_present) 
+        return "ERROR: Could not parse conversation text."
 
     combined_pcm_data = b''
-    print(f"Starting sequential audio generation for {len(turns)} turns...")
+    sample_rate = 24000 # Matches your existing configuration
     
-    # 3. Sequential Audio Generation and Concatenation
-    for i, turn in enumerate(turns):
+    print(f"Starting standard sequential audio generation for {len(turns)} turns...")
+    
+    # 4. Sequential Generation
+    for turn in turns:
         personality = turn['personality']
-        
-        # --- SANITIZATION STEP ---
         message_text = turn['text'].encode('ascii', 'ignore').decode()
-        
-        # Get the dynamically assigned voice for this personality
-        voice_name = voice_assignment_map.get(personality)
-        if not voice_name:
-            return f"ERROR: Voice assignment failed for personality '{personality}'. Generation halted."
+        voice_name = NEURAL_VOICE_MAP.get(personality, "en-US-Neural2-A")
 
-        # Generate Segment 
-        audio_base64 = _generate_single_segment(message_text, voice_name, api_key)
-        
-        # --- Check for known error codes ---
-        if isinstance(audio_base64, str) and audio_base64.startswith(('API_ERROR:', 'TTS_SEGMENT_EXCEPTION:')):
-            # If the segment call returned a known error string, stop immediately.
-            return f"FINAL ERROR: Segment {i+1} ({personality}) failed on API call: {audio_base64}"
-            
-        # Decode segment and concatenate
+        # Configure synthesis
+        synthesis_input = texttospeech.SynthesisInput(text=message_text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="en-US" if "US" in voice_name else "en-GB", 
+            name=voice_name
+        )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.LINEAR16, # Keeps your existing PCM logic
+            sample_rate_hertz=sample_rate
+        )
+
         try:
-            audio_bytes = base64.b64decode(audio_base64)
+            response = client.synthesize_speech(
+                input=synthesis_input, voice=voice, audio_config=audio_config
+            )
             
-            # Calculate silence pause duration
-            SILENCE_SAMPLES = int(PAUSE_DURATION_SECONDS * SAMPLE_RATE)
-            SILENCE_BYTES = SILENCE_SAMPLES * 2 
+            # Add a 0.3s pause between segments (0.3 * rate * 2 bytes for 16-bit)
+            silence_bytes = int(0.3 * sample_rate) * 2
+            combined_pcm_data += b'\x00' * silence_bytes
+            combined_pcm_data += response.audio_content
             
-            combined_pcm_data += b'\x00' * SILENCE_BYTES 
-            combined_pcm_data += audio_bytes
-            print(f"  > Generated and concatenated segment {i+1} ({voice_name})")
         except Exception as e:
-            return f"ERROR: Failed to decode/combine audio segment {i+1} ({personality}): {e}"
+            return f"ERROR during turn generation ({personality}): {e}"
 
-
-    # 4. Final WAV Header Creation and File Saving
+    # 5. Save using your existing _save_pcm_to_wav helper
     if combined_pcm_data:
-        # Create a unique temporary WAV file path
         temp_file_name = tempfile.mktemp(suffix="_conversation.wav")
-        print(f"\nSuccessfully generated all segments. Saving to temporary file: {temp_file_name}")
-
-        if _save_pcm_to_wav(combined_pcm_data, SAMPLE_RATE, temp_file_name):
-            # Success: Return the file path string
+        if _save_pcm_to_wav(combined_pcm_data, sample_rate, temp_file_name):
             return temp_file_name
-        else:
-            # Failure to write file
-            return "ERROR: Failed to write final WAV file to temporary path."
-    else:
-        return "ERROR: Combined PCM data was empty."
+        return "ERROR: Failed to write WAV file."
+    
+    return "ERROR: Combined audio data was empty."
         
 # --- Placeholder for the old single-voice function ---
 def generate_basic_single_voice_audio_gemini(raw_text: str, api_key: str = "") -> Union[str, str]:

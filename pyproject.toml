@@ -51,4 +51,5 @@ dependencies = [
     "langchain-ollama>=1.0.0",
     "langchain-anthropic>=1.0.1",
     "langchain-experimental>=0.0.42",
+    "google-cloud-texttospeech>=2.33.0",
 ]
