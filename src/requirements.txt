@@ -1,0 +1,9 @@
+gradio
+openai
+google-generativeai
+python-dotenv
+requests
+Pillow
+scipy
+matplotlib
+ipython
