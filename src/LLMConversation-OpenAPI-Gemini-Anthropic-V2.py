@@ -767,7 +767,10 @@ with gr.Blocks() as demo:
             "Should we colonize other planets?",
             "What is the meaning of art?",
             "Can AI ever be truly conscious?",
-            "What is the purpose of life?"
+            "What is the purpose of life?",
+            "Does owning a mac pro makes you cool and smart?",
+            "Is exercise really required? How about cardio vs strength?"
+
         ],
         conversation_starter
     )
@@ -804,9 +807,9 @@ with gr.Blocks() as demo:
     )
 
     demo.launch(
-        server_name="0.0.0.0", 
-        server_port=7860, 
-        ssr_mode=False, 
-        share=False,
-        footer_links=["settings", "gradio"] # This removes the 'api' link from the footer
+    server_name="0.0.0.0", 
+    server_port=7860, 
+    ssr_mode=False, 
+    share=False,
+    footer_links=["gradio"]  #Remooves 'api' and 'settings' links
     )
