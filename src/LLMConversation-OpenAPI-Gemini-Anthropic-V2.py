@@ -87,9 +87,9 @@ anthropic_url = "https://api.anthropic.com/v1"
 gemini = OpenAI(api_key=google_api_key, base_url=gemini_url)
 anthropic = OpenAI(api_key=anthropic_api_key, base_url=anthropic_url)
 
-openai_model = "gpt-4.1-mini"
-gemini_model = "gemini-2.5-pro"
-anthropic_model='claude-sonnet-4-5-20250929'
+openai_model = "gpt-4.1-nano"
+gemini_model = "gemini-2.5-flash-lite"
+anthropic_model='claude-haiku-4-5'
 
 openai_llm = "OpenAI"
 gemini_llm = "Gemini"
@@ -183,7 +183,7 @@ print (call_llm(anthropic, anthropic_model, "You are tech assistant", "How tcpip
 '''
 
 # --- CONFIGURATION CONSTANTS ---
-GEMINI_TTS_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent"
+GEMINI_TTS_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-tts:generateContent"
 SAMPLE_RATE = 24000 
 DEFAULT_VOICE = "Kore" 
 
