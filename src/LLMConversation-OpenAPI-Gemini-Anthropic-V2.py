@@ -49,8 +49,6 @@ anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 user_id = os.getenv('USER_ID')
 password = os.getenv('PASSWORD')
 
-print(user_id)
-print(password)
 
 
 if openai_api_key:
